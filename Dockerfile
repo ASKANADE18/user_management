@@ -12,7 +12,9 @@ ENV PYTHONUNBUFFERED=1 \
 WORKDIR /myapp
 
 # Update system and install required packages (no forced libc-bin version)
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get update \
+    && apt-get upgrade -y \ 
+    && apt-get install -y --no-install-recommends \
     gcc \
     libpq-dev \
     && apt-get clean \
@@ -28,7 +30,9 @@ RUN python -m venv /.venv \
 FROM python:3.12-slim-bookworm as final
 
 # Install minimal system dependencies if needed (no forced libc-bin install)
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get update \
+    && apt-get upgrade -y \  
+    && apt-get install -y --no-install-recommends \
     libpq-dev \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
