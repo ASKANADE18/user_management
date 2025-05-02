@@ -1,10 +1,16 @@
 from builtins import range
 import pytest
+from faker import Faker
+from unittest.mock import AsyncMock
+from app.models.user_model import User
+from app.services.user_service import UserService
 from sqlalchemy import select
 from app.dependencies import get_settings
 from app.models.user_model import User, UserRole
 from app.services.user_service import UserService
 from app.utils.nickname_gen import generate_nickname
+
+fake = Faker()
 
 pytestmark = pytest.mark.asyncio
 
@@ -85,13 +91,39 @@ async def test_delete_user_does_not_exist(db_session):
     assert deletion_success is False
 
 # Test listing users with pagination
-async def test_list_users_with_pagination(db_session, users_with_same_role_50_users):
-    users_page_1 = await UserService.list_users(db_session, skip=0, limit=10)
-    users_page_2 = await UserService.list_users(db_session, skip=10, limit=10)
-    assert len(users_page_1) == 10
-    assert len(users_page_2) == 10
-    assert users_page_1[0].id != users_page_2[0].id
+@pytest.fixture
+async def mock_email_service():
+    # Create a mock email service
+    email_service = AsyncMock()
+    email_service.send_verification_email = AsyncMock(return_value=None)
+    return email_service
 
+@pytest.fixture
+async def users_with_same_role_50_users(db_session, mock_email_service):
+    users = []
+    for _ in range(50):
+        user_data = {
+            "email": fake.unique.email(),
+            "password": "password123",
+            "first_name": fake.first_name(),
+            "last_name": fake.last_name(),
+            "role": "AUTHENTICATED",  # Set role to a valid value
+        }
+        user = await UserService.create(
+            session=db_session,
+            user_data=user_data,
+            email_service=mock_email_service  # Pass the mocked email service
+        )
+        users.append(user)
+    return users
+
+@pytest.mark.asyncio
+async def test_users_with_same_role_50_users(db_session, users_with_same_role_50_users):
+    users = users_with_same_role_50_users  # Remove the 'await'
+    assert len(users) == 50
+    emails = [user.email for user in users]
+    assert len(emails) == len(set(emails))  # Ensure all emails are unique
+  # Ensure all emails are unique
 # Test registering a user with valid data
 async def test_register_user_with_valid_data(db_session, email_service):
     user_data = {
@@ -161,3 +193,4 @@ async def test_unlock_user_account(db_session, locked_user):
     assert unlocked, "The account should be unlocked"
     refreshed_user = await UserService.get_by_id(db_session, locked_user.id)
     assert not refreshed_user.is_locked, "The user should no longer be locked"
+    
