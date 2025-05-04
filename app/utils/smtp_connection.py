@@ -26,6 +26,10 @@ class SMTPClient:
                 server.login(self.username, self.password)
                 server.sendmail(self.username, recipient, message.as_string())
             logging.info(f"Email sent to {recipient}")
-        except Exception as e:
+        except smtplib.SMTPException as e:
             logging.error(f"Failed to send email: {str(e)}")
             raise
+        except smtplib.SMTPAuthenticationError as e:
+            logging.error(f"Authentication error: {str(e)}")
+            raise
+        
