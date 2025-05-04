@@ -34,9 +34,53 @@ from app.services.jwt_service import create_access_token
 from app.utils.link_generation import create_user_links, generate_pagination_links
 from app.dependencies import get_settings
 from app.services.email_service import EmailService
+from typing import Optional, Dict
 router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 settings = get_settings()
+# app/routes/user_routes.py
+
+@router.get("/users/search/", response_model=UserListResponse, tags=["User Management Requires (Admin or Manager Roles)"])
+async def search_users(
+    request: Request,
+    email: Optional[str] = None,
+    nickname: Optional[str] = None,
+    first_name: Optional[str] = None,
+    last_name: Optional[str] = None,
+    skip: int = 0,
+    limit: int = 10,
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(require_role(["ADMIN", "MANAGER"]))
+):
+    """
+    Search users based on query parameters.
+    
+    - **email**: The email address of the user (optional).
+    - **nickname**: The nickname of the user (optional).
+    - **first_name**: The first name of the user (optional).
+    - **last_name**: The last name of the user (optional).
+    """
+    search_params = {
+        "email": email,
+        "nickname": nickname,
+        "first_name": first_name,
+        "last_name": last_name,
+    }
+
+    users = await UserService.search(db, search_params, skip, limit)
+    total_users = len(users)  # You can refine this by counting total matching users, if needed
+
+    user_responses = [
+        UserResponse.model_validate(user) for user in users
+    ]
+
+    return UserListResponse(
+        items=user_responses,
+        total=total_users,
+        page=skip // limit + 1,
+        size=len(user_responses),
+        links=generate_pagination_links(request, skip, limit, total_users)
+    )
 @router.get("/users/{user_id}", response_model=UserResponse, name="get_user", tags=["User Management Requires (Admin or Manager Roles)"])
 async def get_user(user_id: UUID, request: Request, db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme), current_user: dict = Depends(require_role(["ADMIN", "MANAGER"]))):
     """
