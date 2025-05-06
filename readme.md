@@ -31,7 +31,7 @@ If a token was missing or invalid, trying to delete a user gave a 401 error. Thi
 [Issue5](https://github.com/ASKANADE18/user_management/issues/9)
 
 ## Docker Hub Repository
-Link - [Docker_Repository]( link)
+Link - [Docker_Repository](https://hub.docker.com/repository/docker/askanade/user_management/general)
 
 Docker image for this project on Docker Hub:
 
@@ -50,7 +50,7 @@ The Search and Filtering feature helps admins quickly find and manage users. The
  ![Output](Feature_output.png)
 
 ## New Tests
-New Tests are in branch test branch - [Tests](https://github.com/ASKANADE18/user_management/tree/test-coverage-enhancement)
+New Tests are in test branch - [Tests](https://github.com/ASKANADE18/user_management/tree/test-coverage-enhancement)
 
 ## My Experience
 
